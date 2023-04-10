@@ -39,10 +39,10 @@
 (when (not package-archive-contents)
     (package-refresh-contents))
 
-(add-to-list 'load-path "~/.emacs.d/elpa/codeium/codeium.el")
+(add-to-list 'load-path "~/.emacs.d/elpa/codeium/")
 (require 'codeium)
 (use-package codeium 
-  :load-path  "~/.emacs.d/elpa/codeium/codeium.el"
+  :load-path  "~/.emacs.d/elpa/codeium/"
     ;; if you use straight
     ;; :straight '(:type git :host github :repo "Exafunction/codeium.el")
     ;; otherwise, make sure that the codeium.el file is on load-path
