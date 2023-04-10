@@ -1,0 +1,2 @@
+;;; Generated package description from undo-fu-session.el  -*- no-byte-compile: t -*-
+(define-package "undo-fu-session" "20230205.310" "Persistent undo, available between sessions" '((emacs "28.1")) :commit "7b3fd0647dd1fbd02101eec61440e6d44953bcd9" :authors '(("Campbell Barton" . "ideasman42@gmail.com")) :maintainer '("Campbell Barton" . "ideasman42@gmail.com") :keywords '("convenience") :url "https://codeberg.com/ideasman42/emacs-undo-fu-session")

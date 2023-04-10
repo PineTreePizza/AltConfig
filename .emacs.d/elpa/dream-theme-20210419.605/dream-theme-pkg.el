@@ -1,0 +1,2 @@
+;;; Generated package description from dream-theme.el  -*- no-byte-compile: t -*-
+(define-package "dream-theme" "20210419.605" "Maximalist Nordic/Zenburn-inspired color theme" '((emacs "26.1")) :commit "0c27f05544b90e41338f79ea923044b358a323c6" :authors '(("Dirk-Jan C. Binnema" . "djcb@djcbsoftware.nl")) :maintainer '("Dirk-Jan C. Binnema" . "djcb@djcbsoftware.nl") :keywords '("faces" "theme") :url "https://github.com/djcb/dream-theme")
