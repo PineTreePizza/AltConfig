@@ -171,7 +171,7 @@ exec --no-startup-id systemctl --user enable --now emacs
 bindsym $mod+Ctrl+Shift+Left resize shrink width 10 px or 10 ppt
 bindsym $mod+Ctrl+Shift+Down resize grow height 10 px or 10 ppt
 bindsym $mod+Ctrl+Shift+Up resize shrink height 10 px or 10 ppt
-bindsym $mod+Ctrl+Shift+Right resize grow width 10 px or 10 ppt
+bindsym $mod+Ctrl+Shift+Right resize grow width 10 px or 10 pp
 
 
 

@@ -1,22 +1,29 @@
+shell:
+  program: /usr/lib/w3m/w3mimgdisplay
+  args:
+    - "-c"
+    - "-T"
+    - "image/png"
+    - "-s"
 
 font:
   normal:
-    family: monospace
+    family: Terminus
     style: Regular
 
   bold:
-    family: monospace
+    family: Terminus
     style: Bold
 
   italic:
-    family: monospace
+    family: Terminus
     style: Italic
 
   bold_italic:
-    family: monospace
+    family: Terminus
     style: Bold Italic
 
-  size: 8
+  size: 10
   
 colors:
   # Default colors

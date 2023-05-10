@@ -1,22 +1,22 @@
 
 font:
   normal:
-    family: monospace
+    family: Terminus
     style: Regular
 
   bold:
-    family: monospace
+    family: Terminus
     style: Bold
 
   italic:
-    family: monospace
+    family: Terminus
     style: Italic
 
   bold_italic:
-    family: monospace
+    family: Terminus
     style: Bold Italic
 
-  size: 8
+  size: 10
   
 colors:
   # Default colors
@@ -48,7 +48,7 @@ colors:
 
 
 window:
-  opacity: 0.8
+  opacity: 0.95
   decorations: none
 
 cursor:
