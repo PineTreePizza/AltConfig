@@ -1,9 +1,0 @@
-if status is-interactive
-    # Commands to run in interactive sessions can go here
-end
-set fish_greeting
-set -x OPENAI_KEY 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
-set -x HF_TOKEN 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
-set -x TG_KEY 6225395792:AAHeMvoZJdIbzMzXbUxLxYP6obMVoCoPoVI
-set -x HOOK https://retineo.serveo.net/
-set -x REPLICATE_API_TOKEN 873ae2ee83785329d06f11f65455d00321d748a3
