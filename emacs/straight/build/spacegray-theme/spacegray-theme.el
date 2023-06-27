@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-spacegray-theme/spacegray-theme.el

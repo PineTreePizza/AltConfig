@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/nerd-icons.el/data/nerd-icons-data-seti-ui-custom.el

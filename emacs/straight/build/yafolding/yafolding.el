@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/yafolding/yafolding.el

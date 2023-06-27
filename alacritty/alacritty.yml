@@ -1,11 +1,3 @@
-shell:
-  program: /usr/lib/w3m/w3mimgdisplay
-  args:
-    - "-c"
-    - "-T"
-    - "image/png"
-    - "-s"
-
 font:
   normal:
     family: Terminus
@@ -55,7 +47,7 @@ colors:
 
 
 window:
-  opacity: 0.95
+  opacity: 0.40
   decorations: none
 
 cursor:

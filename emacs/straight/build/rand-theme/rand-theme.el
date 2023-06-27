@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/rand-theme/rand-theme.el

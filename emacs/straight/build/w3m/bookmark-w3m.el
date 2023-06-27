@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-w3m/bookmark-w3m.el

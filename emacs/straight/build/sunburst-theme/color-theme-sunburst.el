@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/Emacs-Sunburst-Color-Theme/color-theme-sunburst.el

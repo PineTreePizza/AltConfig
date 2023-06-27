@@ -1,0 +1,13 @@
+import datetime.datetime
+
+def get_datetime():
+        return datetime.datetime.now()
+
+def get_number_squared(num):
+        return num * num
+
+def get_square_root(num):
+        return num ** (1/2)
+
+def create_list(n):
+        return [i for i in range(n)]

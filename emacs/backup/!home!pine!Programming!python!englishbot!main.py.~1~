@@ -1,0 +1,727 @@
+import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot import types
+import asyncio
+import random
+import redis
+import requests
+
+random.seed()
+
+# Connect to Redis server
+try:
+        r = redis.Redis(host="localhost", port=6379, db=0)
+except:
+        print("Redis failed to connect")
+
+def set_data(key="",UUID=0, message=""):
+    ID = str(key)+str(UUID)
+    if(r.exists(ID)):
+        r.set(ID,message)
+        print("data successfully added: ",r.get(ID).decode())
+    else:
+        r.set(ID,message)
+        print("data successfully created: ",r.get(ID).decode())
+def get_data(key="",UUID=0):
+    ID = str(key)+str(UUID)
+    if(r.exists(ID)):
+        return r.get(ID).decode()
+    else:
+        print("No data at ID")
+        return None
+
+def clear_data(key="",UUID=0):
+    ID = str(key)+str(UUID)
+    if(r.exists(ID)):
+        r.delete(ID)
+        print("Successfully deleted data!")
+    else:
+        print("No data at ID")
+
+def add_data(key="",UUID=0, message=""):
+    ID = str(key)+str(UUID)
+    if(r.exists(ID)):
+        message=r.get(ID).decode()+"^&^"+message # in this case, ^&^ is a special character use for separation of messages
+        r.set(ID,message)
+        print("data successfully added: ",r.get(ID).decode())
+    else:
+        r.set(ID,message)
+        print("data successfully created: ",r.get(ID).decode())
+
+def format_data(datastring=""):
+    if(type(datastring) == str):
+        print(datastring.split("^&^"))
+        return datastring.split("^&^")
+    else:
+        return []
+        
+def generate_names():
+        names = [
+                "Alice", "Benjamin", "Charles", "David", "Emily", "Emma",
+                "George", "Harry", "Isabella", "James", "John", "Mary",
+                "Michael", "Olivia", "Peter", "Rachel", "Robert", "Sarah",
+                "Thomas", "William", "Abigail", "Alexander", "Andrew", "Ashley",
+                "Benjamin", "Brandon", "Christopher", "Daniel", "Emily", "Emma",
+                "Ethan", "Gabriel", "Hannah", "Isabella", "Jacob", "Joshua",
+                "Lauren", "Michael", "Nathan", "Olivia", "Aiden", "Amelia",
+                "Antonio", "Ava", "Carlos", "Chloe", "Daniel", "Elena",
+                "Elijah", "Elizabeth", "Emma", "Felix", "Gabriela", "Hector",
+                "Isaac", "Jacob", "Juan", "Julia", "Liam", "Lucas",
+                "Mia", "Miguel", "Natalia", "Noah", "Oliver", "Paula",
+                "Rafael", "Samuel", "Sofia", "Sophia", "Tomas", "Valentina",
+                "Victoria", "Xavier", "Zoe"
+        ]
+        random.shuffle(names)  # Shuffle the names to randomize the selection
+        return names
+
+def select_names(names):
+    user_name = random.choice(names)
+    bot_name = random.choice(names)
+    while bot_name == user_name:
+        bot_name = random.choice(names)
+    return user_name, bot_name
+
+start_prompt = "``` Send a message to start!\nThe longer you speak to the bot the more it will lose its train of thought, be sure to reset it now and then it needs rest too😅```"
+
+API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+#API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+headers = {"Authorization": "Bearer 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"}
+bot = AsyncTeleBot("5822609267:AAEQD0LCFMYqEabRnSo9j5WZELw7inrsjFI")
+
+def query(payload):
+	response = requests.post(API_URL, headers=headers, json=payload)
+	return response.json()
+
+def prompt(past_user_input,generated_responses,text):
+        output = query({
+	              "inputs": {
+                        "past_user_inputs": past_user_input,
+	                      "generated_responses": generated_responses,
+		                    "text": text},
+                "parameters":{
+                        "temperature":0.6,
+                        "max_new_tokens":250,
+                        "num_beams":2,
+                        "repetition_penalty":1.2,
+                        "max_time":None,
+                        "top_k":512,
+                        "top_p":0.8,
+                        "do_sample":True,
+                },
+                "options": {
+                        "use_cache":True,
+                        "wait_for_model":True,
+                },
+        })
+        return output
+
+def rearrange_words(string):
+    words = string.split()
+    shuffled_words = random.sample(words, len(words))
+    return ' '.join(shuffled_words)
+
+class conversational:
+    def __init__(self, text, questions, answers):
+        self.text = text
+        self.questions = questions
+        self.answers = answers
+    
+    def get_questions(self):
+        return self.questions
+    
+    def get_answers(self):
+        return self.answers
+
+    def get_answer_from_question(self, question):
+        if self.answers == 1:
+            return None
+        index = self.questions.index(question)
+        return self.answers[index]
+    
+    def get_type(self):
+        return "conversational"
+
+class question:
+    def __init__(self, text, questions, correct_id, randomize=False):
+        self.text = text
+        self.questions = questions
+        self.correct_id = correct_id
+        self.randomize = randomize
+        if self.randomize:
+            # Zip questions and their indices together
+            zipped_questions = list(zip(self.questions, range(len(self.questions))))
+            # Shuffle the zipped list
+            random.shuffle(zipped_questions)
+            # Unzip the shuffled list back into questions and their indices
+            self.questions, indices = zip(*zipped_questions)
+            # Update the correct_id
+            self.correct_id = indices.index(self.correct_id)
+                
+    def get_questions(self):
+        return self.questions
+
+    def get_correct_id(self):
+        return self.correct_id
+
+    def check_answer(self, answer):
+        return answer == self.questions[self.correct_id]
+
+    def get_type(self):
+        return "question"
+
+def question_create(question_class, width=2):
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    questions = question_class.get_questions()
+    for i in range(0, len(questions), width):
+        row = questions[i:i+width]
+        markup.row(*row)
+    return markup
+
+def question_create_array(question_array, width=2):
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    questions = question_array
+    for i in range(0, len(questions), width):
+        row = questions[i:i+width]
+        markup.row(*row)
+    return markup
+
+messages_arr=[]
+
+messages_arr.append(conversational("Hi! Do you have gaps in English too? Let’s help each other and make up for lost time 😉",["Nice to meet you!"],1))
+
+messages_arr.append(conversational("Nice to meet you too! The first topic is «Travelling». Let’s start with the vocabulary.",["Let's go"],1))
+
+keyboard = types.InlineKeyboardMarkup()
+button = types.InlineKeyboardButton(text="Vocabulary «Travelling»", callback_data="travel_vocab")
+keyboard.add(button)
+
+word =  ["Landing", "Take-off", "Destination", "Customs", "Route", "Suitcase", "Vacation", "Resort", "To cancel", "To check in", "Domestic tourism", "Hitchhiking", "Fare", "Insurance", "Cuisine", "Jetlag", "Wanderlust", "Keepsake", "Endorse", "Itinerary"]
+
+uk_transcription = [
+    'ˈlændɪŋ',
+    'ˈteɪkɒf',
+    'ˌdestɪˈneɪʃ(ə)n',
+    'ˈkʌstəmz',
+    'ruːt',
+    'ˈsuːtkeɪs',
+    'vəˈkeɪʃ(ə)n',
+    'rɪˈzɔːt',
+    'ˈkæns(ə)l',
+    'ˈtʃekɪn',
+    'dəˈmestɪk ˈtʊərɪz(ə)m',
+    'ˈhɪtʃhaɪkɪŋ',
+    'feə',
+    'ɪnˈʃʊər(ə)ns',
+    'kwɪˈziːn',
+    'jet ˌlaɡ',
+    'ˈwɒndəlʌst',
+    'ˈkiːpseɪk',
+    'ɪnˈdɔːs',
+    'aɪˈtɪn(ə)(rə)rɪ'
+]
+
+us_transcription = [
+    'ˈlændɪŋ',
+    'teɪk',
+    'ˌdestɪˈneɪʃn',
+    'ˈkʌstəmz',
+    'ruːt',
+    'ˈsuːtkeɪs',
+    'vəˈkeɪʃn',
+    'rɪˈzɔːrt',
+    'ˈkænsl',
+    'ˈtʃek ɪn',
+    'dəˈmestɪk ˈtʊrɪzəm',
+    'ˈhɪtʃˌhaɪkɪŋ',
+    'fer',
+    'ɪnˈʃʊrəns',
+    'kwɪˈziːn',
+    ' dʒɛt læg',
+    'ˈwɑːndərlʌst',
+    'ˈkiːpseɪk',
+    'ɪnˈdɔːrs',
+    'aɪˈtɪnərerɪ'
+]
+translation = ["Посадка", "Взлет", "Пункт назначения", "Таможня", "Маршрут", "Чемодан", "Отпуск", "Курорт", "Отменять", "Регистрация", "Внутренний туризм", "Автостоп", "Тариф", "Страхование", "Кухня", "Синдром смены часовых поясов", "Желание путешествовать", "Сувенир", "Оформлять", "Путеводитель"]
+
+next = random.choice(word)
+
+hkeyboard = types.ReplyKeyboardMarkup()
+hkeyboard.row("Help 🆘")
+hkeyboard.row("I'm ready 😎")
+
+kkeyboard = types.ReplyKeyboardMarkup()
+kkeyboard.row("Next one ✏️")
+kkeyboard.row("I'm ready 💪")
+question_array = [
+        question("1) Landing", ["Посадка", "Взлет", "Пункт назначения"], 0, randomize=True),
+        question("2) Взлет", ["Take-off", "Landing", "Custom"], 0, randomize=True),
+        question("3) Insurance", ["Памятная вещь", "Страхование", "Стоимость поездки"], 1, randomize=True),
+        question("4) Памятная вещь", ["Keepsake", "Endorse", "Itinerary"], 0, randomize=True),
+        question("5) Customs", ["Чемодан", "Отпуск", "Таможня"], 2, randomize=True),
+        question("6) Пункт назначения", ["Route", "Destination", "Hitchhiking"], 1, randomize=True),
+        question("7) Jetlag", ["Плохое самочувствие из-за смены часового пояса", "Страсть к путешествиям", "Курорт"], 0, randomize=True),
+        question("8) Отменить", ["To check in", "To cancel", "Take-off"], 1, randomize=True),
+        question("9) Itinerary", ["Местный туризм", "Стоимость поездки", "Путеводитель"], 2, randomize=True),
+        question("10) Курорт", ["Vacation", "Resort", "Route"], 1, randomize=True),
+        question("1) To endorse", ["Одобрить, Поставить визу", "Отменить", "Въехать"], 0, randomize=True),
+        question("2) Стоимость поездки", ["Fare", "Cuisine", "Таможня"], 0),
+        question("3) Wanderlust", ["Памятная вещь", "Страсть к путешествиям", "Кухня"], 1, randomize=True),
+        question("4) Маршрут", ["Route", "Hitchhiking", "Resort"], 0),
+        question("5) Cuisine", ["Пункт назначения", "Местный туризм", "Местная кухня"], 2, randomize=True),
+        question("6) Въехать", ["To cancel", "To check in", "To endorse"], 1, randomize=True),
+        question("7) Suitcase", ["Чемодан", "Маршрут", "Таможня"], 0, randomize=True),
+        question("8) Автостоп", ["Wanderlust", "Hitchhiking", "Keepsake"], 1, randomize=True),
+        question("9) Domestic tourism", ["Местная кухня", "Стоимость поездки", "Местный туризм"], 2, randomize=True),
+        question("10) Отпуск", ["Resort", "Vacation", "Route"], 1, randomize=True),
+        question("10) Отпуск", ["Resort", "Vacation", "Route"], 1, randomize=True)
+]
+
+question_post_array = [
+        question("3) I need to check-in and to pass through customs", ["Мне нужно зарегистрироваться и пройти регистрацию.", "Мне нужно зарегистрироваться и пройти таможню.", "Мне нужно пройти регистрацию и зарегистрироваться."], 1, randomize=True),
+        question("4) Сколько памятных сувениров ты собираешься купить на курорте?", ["How many keepsakes are you going to buy at the resort?", "Many buy how to are at resort the keepsakes going you", "How many buy keepsakes are you going to at the resort?"], 0, randomize=True),
+        question("5) How ### you ### to cope with the ###?", ["How do you managed to cope with the fare?", "How did you manage to cope with the jetlag?", "How do you manage to cope with the jetlag?"], 1, randomize=True),
+        question("6) Could you tell me the final fare?", ["Не могли бы вы сказать окончательный пункт назначения?", "Не могли бы вы сказать окончательный маршрут поездки?", "Не могли бы вы сказать окончательную стоимость поездки?"], 2, randomize=True),
+        question("7) Скорее всего мы отменим поездку из-за внеплановых обстоятельств.", ["Will cancel most the due trip likely unplanned we to circumstances", "Most likely we will cancel the trip due to unplanned circumstances.", "We will likely cancel the trip due to unplanned circumstances."], 1, randomize=True),
+        question("8) I don’t know #### in the world with such a #### as you have.", ["I don’t know anyone in the world with such a wanderlust as you have.", "I don’t know nobody in the world with such a wanderlust as you have.", "I don’t know nobody in the world with such a keepsake as you have."], 0, randomize=True),
+        question("9) Ненавижу смотреть вторую часть «Пункт назначения». Мое сердце готово выпрыгнуть из груди во время просмотра подобных фильмов.", ["I can’t stand watching the Final Destination. My heart is ready to burst out of my chest while watching films like this one.", "I can’t stand the Final Destination. My heart are ready to burst out of my chest while watching films like this one.", "I can’t stand to watch the Final Destination. My heart is ready to burst out of my chest while watching films like this one."], 0, randomize=True),
+        question("10) Автостоп - неплохой способ посмотреть мир, но годится только для рискованных людей.", ["Hitchhiking isn’t a bad way to see the world but it’s suitable only for risky people", "Isn’t the a risky hitchhiking it’s suitable to see people for bad only but way world", "Hitchhiking is a risky way to see the world but it’s suitable only for bad people."], 0, randomize=True),
+        question("10) Отпуск", ["Resort", "Vacation", "Route"], 1, randomize=True)
+]
+quiz = 0
+
+# Define a function to handle messages
+@bot.message_handler(commands=['start'])
+async def start(message):
+    # Send a message with the keyboard markup
+    clear_data("send",message.from_user.id)
+    clear_data("name",message.from_user.id)
+    clear_data("past",message.from_user.id)
+    clear_data("generated",message.from_user.id)
+    clear_data("completed",message.from_user.id)
+    clear_data("attempt",message.from_user.id)
+    clear_data("previous",message.from_user.id)
+    clear_data("completed-post",message.from_user.id)
+    clear_data("attempt-post",message.from_user.id)
+    clear_data("previous-post",message.from_user.id)
+    clear_data("question-post",message.from_user.id)
+    clear_data("current-post",message.from_user.id)
+    clear_data("current",message.from_user.id)
+    clear_data("question",message.from_user.id)
+    await bot.send_message(message.chat.id, text="Welcome to the Colloquial English Guide bot! Before we start I'll need your name!",reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+
+@bot.message_handler(func=lambda message: not message.text.startswith('/'))
+async def chatbot(message):
+
+    await bot.send_chat_action(message.chat.id, 'typing')
+
+    prevmess=get_data("previous",message.from_user.id)
+
+    print(prevmess,message.text)
+    if(get_data("name",message.from_user.id) == None):
+            set_data("name",message.from_user.id,message.text)
+            await bot.send_message(message.chat.id, messages_arr[0].text, reply_markup=question_create(messages_arr[0]),parse_mode="Markdown")
+    elif(message.text == "Nice to meet you!" and prevmess == None):
+        
+        set_data("previous",message.from_user.id,message.text)
+        await bot.send_message(message.chat.id, messages_arr[1].text, reply_markup=question_create(messages_arr[1]),parse_mode="Markdown")
+    elif(message.text == "Let's go" and prevmess == "Nice to meet you!"):
+        
+        set_data("previous",message.from_user.id,message.text)
+        await bot.send_message(message.chat.id,text="Here is a vocabulary to help you out!",reply_markup=keyboard,parse_mode="Markdown")
+    elif(message.text == "Help 🆘" and prevmess == "Let's go"):
+        
+        set_data("previous",message.from_user.id,message.text)
+        kbd = question_create_array(word,2)
+        kbd.row("I'm ready 💪")
+        await bot.send_message(message.chat.id,text="I'm all ears!" ,reply_markup=kbd,parse_mode="Markdown")
+    elif(message.text in word and prevmess == "Help 🆘"):
+        
+        await bot.send_message(message.chat.id,text="Here is some clarification:" ,reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        await bot.send_message(message.chat.id, text=f"{message.text} - {translation[word.index(message.text)]}\nUK - [[{uk_transcription[word.index(message.text)]}]]\t\tUS - [[{us_transcription[word.index(message.text)]}]]",reply_markup=kkeyboard,parse_mode="Markdown")
+        audio_file = open(f"{message.text}.mp3", "rb")
+        # Send the voice message
+        await bot.send_voice(chat_id=message.chat.id, voice=audio_file)
+        # Close the audio file
+        audio_file.close()
+    elif(message.text == "Next one ✏️" and prevmess == "Help 🆘"):
+
+        kbd = question_create_array(word,2)
+        kbd.row("I'm ready 💪")
+        await bot.send_message(message.chat.id,text="I'm all ears!" ,reply_markup=kbd,parse_mode="Markdown")
+    elif((message.text == "I'm ready 😎" or message.text == "I'm ready 💪") and (prevmess == "Help 🆘" or prevmess == "Let's go" or prevmess == "Next one ✏️")):
+        
+        set_data("previous",message.from_user.id,message.text)
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("What?😅")
+        kbd.row("Ofc😉")
+        await bot.send_message(message.chat.id, text="Great! Are you ready to get limbered up?", reply_markup=kbd,parse_mode="Markdown")
+    elif(message.text == "What?😅" and (prevmess == "I'm ready 😎" or prevmess == "I'm ready 💪")):
+            
+        set_data("previous",message.from_user.id,message.text)
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("Thanks!")
+        await bot.send_message(message.chat.id,text="Well, to get limbered up actually means «to prepare for physical activity by doing exercises» but in our case « to prepare for brain activity».\nA new word for your brainbox 😉" ,reply_markup=kbd,parse_mode="Markdown")
+    elif((message.text == "Ofc😉" or message.text == "Thanks!") and (prevmess == "What?😅" or prevmess == "I'm ready 💪" or prevmess == "I'm ready 😎")):
+        
+        set_data("previous",message.from_user.id,message.text)
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("Let's start")
+        await bot.send_message(message.chat.id,text="I’ve prepared something for you. Let’s check how you memorized new vocabulary" ,reply_markup=kbd,parse_mode="Markdown")
+    elif(message.text == "Let's start" and (prevmess == "Ofc😉" or prevmess == "Thanks!")):
+            
+        set_data("previous",message.from_user.id,message.text)
+        quest = question_array[0]
+        set_data("attempt",message.from_user.id,3)
+        set_data("completed",message.from_user.id,0)
+        set_data("current",message.from_user.id,quest.correct_id)
+        set_data("question",message.from_user.id,question_array.index(quest))
+        await bot.send_message(message.chat.id,text=quest.text ,reply_markup=question_create(quest),parse_mode="Markdown")
+    elif int(get_data("completed", message.from_user.id)) <= 9 and prevmess != "complete" and int(get_data("attempt", message.from_user.id)) != 0:
+
+        if int(question_array[int(get_data("question", message.from_user.id))].questions.index(message.text)) == int(get_data("current", message.from_user.id)):
+                quest = question_array[int(get_data("question", message.from_user.id)) + 1]
+                set_data("completed", message.from_user.id, int(get_data("completed", message.from_user.id)) + 1)
+                set_data("current", message.from_user.id, quest.correct_id)
+                set_data("question", message.from_user.id, question_array.index(quest))
+                await bot.send_message(message.chat.id, text="Correct!", parse_mode="Markdown")
+                if(int(get_data("completed",message.from_user.id)) <= 9):
+                        await bot.send_chat_action(message.chat.id, 'typing')
+                        await asyncio.sleep(1)
+                        await bot.send_message(message.chat.id, text=quest.text, reply_markup=question_create(quest), parse_mode="Markdown")
+                
+                if(int(get_data("completed",message.from_user.id)) > 9 and prevmess != "complete"):
+        
+                        set_data("previous",message.from_user.id,"complete")
+                        kbd = types.ReplyKeyboardMarkup()
+                        kbd.row("Yes", "No")
+                        
+                        await bot.send_message(message.chat.id,text="Good job!🎉 You completed the quiz!",parse_mode="Markdown")
+                        await bot.send_chat_action(message.chat.id, 'typing')
+                        await asyncio.sleep(1)
+                        await bot.send_message(message.chat.id,text="Do you want to try again?",reply_markup=kbd,parse_mode="Markdown")
+        else:
+                # Trigger the second elif block if the condition inside the first elif is not met
+                if int(get_data("attempt", message.from_user.id)) != 0 and int(get_data("completed", message.from_user.id)) <= 9 and prevmess != "complete":
+                        if int(question_array[int(get_data("question", message.from_user.id))].questions.index(message.text)) != int(get_data("current", message.from_user.id)):
+                                set_data("previous", message.from_user.id, message.text)
+                                quest = question_array[int(get_data("question", message.from_user.id))]
+                                set_data("current", message.from_user.id, quest.correct_id)
+                                set_data("question", message.from_user.id, question_array.index(quest))
+                                set_data("attempt", message.from_user.id, int(get_data("attempt", message.from_user.id)) - 1)
+
+                                if(int(get_data("attempt",message.from_user.id)) > 0):
+                                        await bot.send_message(message.chat.id, text=f"Wrong! You have {get_data('attempt', message.from_user.id)} attempts left⚠", parse_mode="Markdown")
+                                        await asyncio.sleep(1)
+                                        await bot.send_message(message.chat.id, text=quest.text, reply_markup=question_create(quest), parse_mode="Markdown")
+
+                                if(int(get_data("attempt",message.from_user.id)) <= 0 and int(get_data("completed",message.from_user.id)) <= 9 and prevmess != "complete"):
+        
+                                        set_data("previous",message.from_user.id,message.text)
+                                        set_data("completed",message.from_user.id,0)
+                                        quiz = 1 if(int(get_data("question",message.from_user.id)) <= 9) else 0
+                                        quest = question_array[0+quiz*10]
+                                        set_data("attempt",message.from_user.id,3)
+                                        set_data("current",message.from_user.id,quest.correct_id)
+                                        set_data("question",message.from_user.id,question_array.index(quest))
+                                        await bot.send_message(message.chat.id,text="Out of attempts, try again😢",parse_mode="Markdown")
+                                        await bot.send_chat_action(message.chat.id, 'typing')
+                                        await asyncio.sleep(1)
+                                        await bot.send_message(message.chat.id,text=quest.text ,reply_markup=question_create(quest),parse_mode="Markdown")
+    elif(message.text == "Yes" and prevmess == "complete"):
+
+        set_data("previous-post",message.from_user.id,message.text)
+        
+        set_data("previous",message.from_user.id,message.text)
+        set_data("completed",message.from_user.id,0)
+        quiz = 1 if(int(get_data("question",message.from_user.id)) <= 10) else 0
+        quest = question_array[0+quiz*10]
+        set_data("attempt",message.from_user.id,3)
+        set_data("current",message.from_user.id,quest.correct_id)
+        set_data("question",message.from_user.id,question_array.index(quest))
+        await bot.send_message(message.chat.id, text="Here we go!", parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        await bot.send_message(message.chat.id,text=quest.text ,reply_markup=question_create(quest),parse_mode="Markdown")
+    elif(message.text == "No" and prevmess == "complete" and get_data("previous-post",message.from_user.id) == None):
+
+        set_data("previous-post",message.from_user.id,message.text)
+        set_data("attempt-post",message.from_user.id,3)
+        set_data("completed-post",message.from_user.id,0)
+        
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("Grammar✏")
+        kbd.row("Chat🗣")
+        kbd.row("Nothing👀")
+        print(get_data("previous-post",message.from_user.id))
+        await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+    elif(message.text == "Grammar✏" and prevmess == "complete" and get_data("previous-post",message.from_user.id) == "No"):
+        
+        set_data("previous-post",message.from_user.id,message.text)
+        set_data("attempt-post",message.from_user.id,3)
+        set_data("completed-post",message.from_user.id,0)
+        text_q="1) Когда ты собираешься в отпуск?"
+        shuffled_answers=rearrange_words("are when you on going vacation ?")
+        print(shuffled_answers)
+        await bot.send_message(message.chat.id,text=text_q,reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        await bot.send_message(message.chat.id,text=shuffled_answers,reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+    elif((message.text.replace(" ", "").lower()=="whenareyougoingonvacation?" or message.text.replace(" ", "").lower()=="whenareyougoingonvacation") and prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Grammar✏" and int(get_data("completed-post",message.from_user.id)) == 0 and int(get_data("attempt-post",message.from_user.id)) != 0):
+
+        set_data("completed-post",message.from_user.id,int(get_data("completed-post",message.from_user.id))+1)
+        await bot.send_message(message.chat.id,text="Correct!",reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        await bot.send_message(message.chat.id,text="2) Italian ####### is my weakness(Итальянская кухня - моя слабость)",parse_mode="Markdown")
+    elif((message.text.replace(" ", "").lower()!="whenareyougoingonvacation?" and message.text.replace(" ", "").lower()!="whenareyougoingonvacation") and prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Grammar✏" and int(get_data("completed-post",message.from_user.id)) == 0 and int(get_data("attempt-post",message.from_user.id)) != 0):
+        set_data("attempt-post",message.from_user.id,int(get_data("attempt-post",message.from_user.id))-1)
+        if(int(get_data("attempt-post",message.from_user.id)) > 0):
+                await bot.send_message(message.chat.id,text=f"Wrong! You have {get_data('attempt-post', message.from_user.id)} attempts left⚠",reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        elif(int(get_data("attempt-post",message.from_user.id)) <= 0 and prevmess == "complete"):
+        
+                set_data("previous-post",message.from_user.id,"No")
+                set_data("completed-post",message.from_user.id,0)
+                set_data("attempt-post",message.from_user.id,2)
+                await bot.send_message(message.chat.id,text="Out of attempts, try again😢",parse_mode="Markdown")
+                await bot.send_chat_action(message.chat.id, 'typing')
+                await asyncio.sleep(1)
+                kbd = types.ReplyKeyboardMarkup()
+                kbd.row("Grammar✏")
+                kbd.row("Chat🗣")
+                kbd.row("Nothing👀")
+                print(get_data("previous-post",message.from_user.id))
+                await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+
+    elif(prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Grammar✏" and int(get_data("completed-post",message.from_user.id)) == 1 and (message.text == "cuisine" or message.text == "italiancuisineismyweakness") and int(get_data("attempt-post",message.from_user.id)) != 0):
+        
+        quest = question_post_array[0]
+        set_data("completed-post",message.from_user.id,int(get_data("completed-post",message.from_user.id))+1)
+        set_data("question-post",message.from_user.id,0)
+        set_data("current-post",message.from_user.id,quest.correct_id)
+        await bot.send_message(message.chat.id,text="Correct!",reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        await bot.send_message(message.chat.id,text=quest.text, reply_markup=question_create(quest,1),parse_mode="Markdown")
+    elif int(get_data("completed-post", message.from_user.id)) <= 10 and int(get_data("completed-post",message.from_user.id)) >= 2 and prevmess == "complete" and int(get_data("attempt-post", message.from_user.id)) != 0 :
+
+        if int(question_post_array[int(get_data("question-post", message.from_user.id))].questions.index(message.text)) == int(get_data("current-post", message.from_user.id)):
+
+                quest = question_post_array[int(get_data("question-post", message.from_user.id)) + 1]
+                set_data("current-post", message.from_user.id, quest.correct_id)
+                set_data("question-post", message.from_user.id, question_post_array.index(quest))
+                set_data("completed-post", message.from_user.id, int(get_data("completed-post", message.from_user.id)) + 1)
+                await bot.send_message(message.chat.id, text="Correct!", parse_mode="Markdown")
+                if(int(get_data("completed-post",message.from_user.id)) < 10):
+                        await bot.send_chat_action(message.chat.id, 'typing')
+                        await asyncio.sleep(1)
+                        await bot.send_message(message.chat.id, text=quest.text, reply_markup=question_create(quest,1), parse_mode="Markdown")
+                
+                if(int(get_data("completed-post",message.from_user.id)) >= 10 and prevmess == "complete"):
+                        set_data("attempt-post",message.from_user.id,3)
+                        set_data("completed-post",message.from_user.id,0)
+                        await bot.send_message(message.chat.id,text="Good job!🎉 You completed the grammar section!",parse_mode="Markdown")
+                        await bot.send_chat_action(message.chat.id, 'typing')
+                        await asyncio.sleep(1)
+                        set_data("previous-post",message.from_user.id,"No")
+                        kbd = types.ReplyKeyboardMarkup()
+                        kbd.row("Grammar✏")
+                        kbd.row("Chat🗣")
+                        kbd.row("Nothing👀")
+                        await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+        else:
+                # Trigger the second elif block if the condition inside the first elif is not met
+                if int(get_data("attempt-post", message.from_user.id)) != 0 and int(get_data("completed-post", message.from_user.id)) <= 10 and prevmess == "complete":
+                        if int(question_post_array[int(get_data("question-post", message.from_user.id))].questions.index(message.text)) != int(get_data("current-post", message.from_user.id)):
+                                quest = question_post_array[int(get_data("question-post", message.from_user.id))]
+                                set_data("current-post", message.from_user.id, quest.correct_id)
+                                set_data("question-post", message.from_user.id, question_post_array.index(quest))
+                                set_data("attempt-post", message.from_user.id, int(get_data("attempt-post", message.from_user.id)) - 1)
+
+                                if(int(get_data("attempt-post",message.from_user.id)) > 0):
+                                        await bot.send_message(message.chat.id, text=f"Wrong! You have {get_data('attempt-post', message.from_user.id)} attempts left⚠", parse_mode="Markdown")
+                                        await asyncio.sleep(1)
+                                        await bot.send_message(message.chat.id, text=quest.text, reply_markup=question_create(quest,1), parse_mode="Markdown")
+
+                                if(int(get_data("attempt-post",message.from_user.id)) <= 0 and int(get_data("completed-post",message.from_user.id)) < 10):
+        
+                                        set_data("completed-post",message.from_user.id,0)
+                                        quest = question_post_array[0]
+                                        set_data("attempt-post",message.from_user.id,3)
+                                        set_data("current-post",message.from_user.id,quest.correct_id)
+                                        set_data("question-post",message.from_user.id,question_post_array.index(quest))
+                                        await bot.send_message(message.chat.id,text="Out of attempts, try again😢",parse_mode="Markdown")
+                                        await bot.send_chat_action(message.chat.id, 'typing')
+                                        await asyncio.sleep(1)
+                                        set_data("previous-post",message.from_user.id,"No")
+                                        kbd = types.ReplyKeyboardMarkup()
+                                        kbd.row("Grammar✏")
+                                        kbd.row("Chat🗣")
+                                        kbd.row("Nothing👀")
+                                        await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+                                        
+    elif(prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Grammar✏" and int(get_data("completed-post",message.from_user.id)) == 1 and (message.text != "cuisine" and message.text != "Italian cuisine is my weakness") and int(get_data("attempt-post",message.from_user.id)) != 0):
+        set_data("attempt-post",message.from_user.id,int(get_data("attempt-post",message.from_user.id))-1)
+        if(int(get_data("attempt-post",message.from_user.id)) > 0):
+                await bot.send_message(message.chat.id,text=f"Wrong! You have {get_data('attempt-post', message.from_user.id)} attempts left⚠",reply_markup=telebot.types.ReplyKeyboardRemove(),parse_mode="Markdown")
+        elif(int(get_data("attempt-post",message.from_user.id)) <= 0 and prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Grammar✏"):
+        
+                set_data("previous-post",message.from_user.id,"No")
+                set_data("completed-post",message.from_user.id,0)
+                set_data("attempt-post",message.from_user.id,2)
+                await bot.send_message(message.chat.id,text="Out of attempts, try again😢",parse_mode="Markdown")
+                await bot.send_chat_action(message.chat.id, 'typing')
+                await asyncio.sleep(1)
+                kbd = types.ReplyKeyboardMarkup()
+                kbd.row("Grammar✏")
+                kbd.row("Chat🗣")
+                kbd.row("Nothing👀")
+                print(get_data("previous-post",message.from_user.id))
+                await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+
+    elif(int(get_data("attempt-post",message.from_user.id)) <= 0 and int(get_data("completed-post",message.from_user.id)) <= 2 and prevmess == "complete"):
+        
+        set_data("previous-post",message.from_user.id,"No")
+        set_data("completed-post",message.from_user.id,0)
+        set_data("attempt-post",message.from_user.id,2)
+        await bot.send_message(message.chat.id,text="Out of attempts, try again😢",parse_mode="Markdown")
+        await bot.send_chat_action(message.chat.id, 'typing')
+        await asyncio.sleep(1)
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("Grammar✏")
+        kbd.row("Chat🗣")
+        kbd.row("Nothing👀")
+        print(get_data("previous-post",message.from_user.id))
+        await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+    elif(prevmess == "complete" and message.text == "Chat🗣" and get_data("previous-post",message.from_user.id) == "No"):
+        
+        clear_data("past",message.from_user.id)
+        clear_data("generated",message.from_user.id)
+        set_data("previous-post",message.from_user.id,"Chat🗣")
+        send=start_prompt
+        name_list = generate_names()
+        user_name, bot_name = select_names(name_list)
+        user_name = get_data("name",message.from_user.id)
+        greeting = ["Hi", "Hello", "Hey", "Hey there", "Heya", "Greetings", "Salutations", "Good day", "Good morning", "Good afternoon", "Good evening", "What's up", "Howdy", "Hi there", "Hello there", "Hey, how's it going", "Heya, what's happening", "How's everything", "How are things", "Hey, what's going on", "Hey, how are you", "Hello, how's it going", "Hi there, how are you doing"]
+        questions = [
+                "Where are you?",
+                "Do you plan to travel?",
+                "Are you traveling?",
+                "Where are you going?",
+                "Have you been on any recent trips?",
+                "Are you exploring new places?",
+                "What's your dream travel destination?",
+                "Have you ever traveled for work?",
+                "Are you an adventure traveler?",
+                "What's your favorite way to travel?",
+                "Do you have any upcoming trips?",
+        ]
+        conv = [
+                "I've heard you're getting into traveling.",
+                "So, I hear you're exploring the world now.",
+                "I've been told you're catching the travel bug.",
+                "I've heard stories of your travel adventures.",
+                "Seems like you're on a quest to see the world.",
+        ]
+        usr_start = f"{random.choice(greeting)} {bot_name}! It's me, {user_name}! {random.choice(conv)} {random.choice(questions)}"
+        kbd = telebot.types.ReplyKeyboardMarkup()
+        kbd.row(usr_start)
+        kbd.row("!Go back")
+        await bot.send_message(message.chat.id, text=send,reply_markup=kbd,parse_mode="Markdown")
+    elif(prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Chat🗣" and message.text != "!Go back" and message.text != "!Reset"):
+        print(format_data(get_data("generated",message.from_user.id)))
+        print(type(format_data(get_data("generated",message.from_user.id))))
+        output = prompt(format_data(get_data("past",message.from_user.id)),format_data(get_data("generated",message.from_user.id)),message.text)
+        print(output)
+        add_data("past",message.from_user.id,message.text)
+        add_data("generated",message.from_user.id,output["generated_text"])
+        send = output["generated_text"]
+        kbd=types.ReplyKeyboardMarkup()
+        kbd.row("!Reset")
+        kbd.row("!Go back")
+        await bot.send_message(message.chat.id, send, reply_markup=kbd, parse_mode="Markdown")
+    elif(prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Chat🗣" and message.text == "!Reset"):
+        clear_data("past",message.from_user.id)
+        clear_data("generated",message.from_user.id)
+        set_data("previous-post",message.from_user.id,"Chat🗣")
+        send=start_prompt
+        name_list = generate_names()
+        user_name, bot_name = select_names(name_list)
+        user_name = get_data("name",message.from_user.id)
+        greeting = ["Hi", "Hello", "Hey", "Hey there", "Heya", "Greetings", "Salutations", "Good day", "Good morning", "Good afternoon", "Good evening", "What's up", "Howdy", "Hi there", "Hello there", "Hey, how's it going", "Heya, what's happening", "How's everything", "How are things", "Hey, what's going on", "Hey, how are you", "Hello, how's it going", "Hi there, how are you doing"]
+        questions = [
+                "Where are you?",
+                "Do you plan to travel?",
+                "Are you traveling?",
+                "Where are you going?",
+                "Have you been on any recent trips?",
+                "Are you exploring new places?",
+                "What's your dream travel destination?",
+                "Have you ever traveled for work?",
+                "Are you an adventure traveler?",
+                "What's your favorite way to travel?",
+                "Do you have any upcoming trips?",
+        ]
+        conv = [
+                "I've heard you're getting into traveling.",
+                "So, I hear you're exploring the world now.",
+                "I've been told you're catching the travel bug.",
+                "I've heard stories of your travel adventures.",
+                "Seems like you're on a quest to see the world.",
+        ]
+        usr_start = f"{random.choice(greeting)} {bot_name}! It's me, {user_name}! {random.choice(conv)} {random.choice(questions)}"
+        kbd = telebot.types.ReplyKeyboardMarkup()
+        kbd.row(usr_start)
+        kbd.row("!Go back")
+        await bot.send_message(message.chat.id, text=send,reply_markup=kbd,parse_mode="Markdown")
+    elif(prevmess == "complete" and get_data("previous-post",message.from_user.id) == "Chat🗣" and message.text == "!Go back"):
+        clear_data("past",message.from_user.id)
+        clear_data("generated",message.from_user.id)
+        set_data("previous-post",message.from_user.id,"No")
+        kbd = types.ReplyKeyboardMarkup()
+        kbd.row("Grammar✏")
+        kbd.row("Chat🗣")
+        kbd.row("Nothing👀")
+        print(get_data("previous-post",message.from_user.id))
+        await bot.send_message(message.chat.id,text="What would you like to do next?" ,reply_markup=kbd,parse_mode="Markdown")
+    elif(prevmess == "complete" and message.text == "Nothing👀" and get_data("previous-post",message.from_user.id) == "No"):
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        start_button = types.KeyboardButton('/start')
+        markup.add(start_button)
+        await bot.send_message(message.chat.id,text="Goodbye, hopefully I was helpful!" ,reply_markup=markup,parse_mode="Markdown")
+            
+
+@bot.callback_query_handler(func=lambda call: call.data == "travel_vocab")
+async def travel_vocab_callback(call):
+        if(get_data("previous",call.from_user.id) == "Let's go"):
+                # Define the list of words
+                words = ["Intermediate" , "Landing", "Take-off", "Destination", "Customs", "Route", "Suitcase", "Vacation", "Resort", "To cancel", "To check in", "Advanced","Domestic tourism", "Hitchhiking", "Fare", "Insurance", "Cuisine", "Jetlag", "Wanderlust", "Keepsake", "Endorse", "Itinerary"]
+                
+                # Split the list into two columns
+                halfway = len(words) // 2
+                column1 = words[:halfway]
+                column2 = words[halfway:]
+                
+                # Define the message to be sent to the user
+                column_width = 18
+                message = ""
+                
+                for i in range(halfway):
+                        message += f"{column1[i]:<{column_width}} {column2[i]:<{column_width}}\n"
+    
+                await bot.send_message(call.from_user.id,text="<code>"+message+"</code>",parse_mode="HTML",reply_markup=hkeyboard)
+
+# Start the bot
+# Create a new event loop and set it as the current event loop
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+# Start the bot's polling loop in the new event loop
+try:
+    loop.run_until_complete(bot.polling())
+except KeyboardInterrupt:
+    pass
+finally:
+    loop.close()

@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-lush-theme/lush-theme.el

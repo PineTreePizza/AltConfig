@@ -1,82 +1,85 @@
 configuration {
   display-drun: "Applications:";
   display-window: "Windows:";
-  drun-display-format: "{name}";
-  font: "monospace 12";
+  drun-display-format: " {name}";
+  font: "Terminus Bold 16";
   modi: "window,run,drun";
-  location:0;
+  show-icons: false;
+  location: 0;
 }
 
 @theme "/dev/null"
-
 * {
-  bg: #101016;
-  bg-alt: #1f2021;
-
-  fg: #dee3e6;
-  fg-alt: #6f758f;
-
+  bg: #222225;
+  bg-alt: #42A5F5;
+  fg: #42A5F5;
+  fg-alt: #81685e;
+  header-fg: #222225;
   background-color: #00000000;
-  
-  border: 0;
   margin: 0;
   spacing: 0;
-  x-offset:8;
-  y-offset:-100;
+  x-offset: 0;
+  y-offset: -169;
 }
 
 window {
-  width: 50%;
-  height: 52%;
+  width: 35%;
+  height: 60%;
+  border: 2;
+  background-color: @bg;
+  border-color: @bg-alt;
+  border-radius: 40px;
 }
 
 element {
-  padding: 5 0;
+  padding: 10 10;
   text-color: @fg-alt;
 }
 
 element selected {
-  text-color: @fg;
+  text-color: @bg;
+  border: 2;
+  background-color: @fg;
+  border-color: @fg;
+  border-radius: 40px;
 }
 
 element-text {
+  padding: 10 20;
   text-color: inherit;
-  vertical-align: 0.5;
 }
 
 element-icon {
-  size: 14;
+  size: 48;
   padding: 0 10 0 0;
+  color: #42A5F5; 
 }
 
 entry {
   background-color: @bg-alt;
-  padding: 12 12 12;
-  text-color: @fg;
+  padding: 20 12 12;
+  text-color: @header-fg;
 }
 
 inputbar {
   children: [prompt, entry];
+  border-color: @bg-alt;
 }
 
 listview {
-  padding: 8 24;
+  padding: 5% 24 5%;
   background-color: @bg;
-  columns: 1;
+  columns: 2;
   lines: 8;
 }
 
 mainbox {
-  background-color: @bg;
   children: [inputbar, listview];
 }
 
 prompt {
   background-color: @bg-alt;
   enabled: true;
-  padding: 12 0 0 12;
-  text-color: @fg;
+  padding: 20 0 0 40;
+  text-color: @header-fg;
 }
-
-/* vim: ft=sass
-Footer

@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/dired-sidebar/dired-sidebar.el

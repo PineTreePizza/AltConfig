@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/org-roam/org-roam-node.el

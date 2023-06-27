@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/compat/.github/workflows/seq-24.el

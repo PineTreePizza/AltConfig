@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacsql/sqlite/sqlite3.c

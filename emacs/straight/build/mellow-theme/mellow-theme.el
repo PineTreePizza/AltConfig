@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-mellow-theme/mellow-theme.el

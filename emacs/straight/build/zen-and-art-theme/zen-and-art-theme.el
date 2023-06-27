@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/zen-and-art-theme/zen-and-art-theme.el

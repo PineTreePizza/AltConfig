@@ -8,3 +8,5 @@ bind C-h split-window -h # Split panes horizontally
 bind C-v split-window -v # Split panes vertically
 bind-key x kill-pane
 bind C-x kill-pane
+set -g mouse off
+set-option -g status-style "bg=blue,fg=black"

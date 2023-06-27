@@ -1,0 +1,26 @@
+#include <iostream>
+#include <limits>
+#include <string>
+
+int main(){
+	
+	std::string words; // Word string
+	
+	std::cout << "Enter a mathematical expression: " << std::endl;
+	
+	std::getline(std::cin, words); // Get the input string from a stdin
+	
+	for(int i = 0; i <= words.size(); i++){
+
+		
+		
+		std::cout << words[i];
+
+	}
+	
+	std::cout << std::endl;
+	std::cout << "Max word length: " << maxWordLength << std::endl;
+	
+	return 0;
+	
+}

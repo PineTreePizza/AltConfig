@@ -1,0 +1,81 @@
+configuration {
+  display-drun: "Applications:";
+  display-window: "Windows:";
+  drun-display-format: "{name}";
+  font: "Terminus Bold 16";
+  modi: "power-menu:rofi-power-menu --confirm=''";
+  location: 4;
+}
+
+@theme "/dev/null"
+* {
+  bg: #222225;
+  bg-alt: #42A5F5;
+
+  fg: #42A5F5;
+  fg-alt: #81685e;
+	fg-selected: #EC7875;
+	header-fg: #222225;
+
+  background-color: #00000000;
+	
+  margin: 0;
+  spacing: 0;
+  x-offset:2;
+  y-offset:0;
+}
+
+window {
+  width: 20%;
+  height: 110%;
+	border: 2;
+	background-color: @bg;
+	border-color: @fg-selected;
+  border-radius: 40px;	
+}
+
+element {
+  padding: 10 10;
+	margin: 25;
+  text-color: @fg-alt;
+}
+
+element selected {
+  text-color: @bg;
+	background-color: @fg-selected;
+	border-color: @fg-selected;
+  border-radius: 40px;	
+	border: 2;
+}
+
+element-text {
+  padding: 10 10;
+  text-color: inherit;
+  horizontal-align: 0.5;
+}
+
+element-icon {
+  size: 14;
+  padding: 0 10 0 0;
+}
+
+listview {
+  padding: 20% 20 20%;
+  y-offset: 50;
+  horizontal-align: 0.5;
+  background-color: @bg;
+  background-radius: 40px;	
+  columns: 1;
+  lines: 6;
+}
+
+mainbox {
+  children: [listview];
+}
+
+prompt {
+  background-color: @bg-alt;
+  enabled: true;
+  padding: 20 0 0 40;
+  text-color: @header-fg;
+}

@@ -2,7 +2,7 @@ configuration {
   display-drun: "Applications:";
   display-window: "Windows:";
   drun-display-format: "{name}";
-  font: "PxlType 10";
+  font: "Terminus Bold 14";
   modi: "window,run,drun";
   location:0;
 }
@@ -10,11 +10,11 @@ configuration {
 @theme "/dev/null"
 
 * {
-  bg: #27202caf;
-  bg-alt: #522571af;
+  bg: #10101638;
+  bg-alt: #1f2021;
 
-  fg: #fee3ee;
-  fg-alt: #d14168;
+  fg: #dee3e6;
+  fg-alt: #6f758f;
 
   background-color: #00000000;
   

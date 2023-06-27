@@ -1,0 +1,13 @@
+if status is-interactive
+    # Commands to run in interactive sessions can go here
+end
+function fish_prompt
+    set -l textcol  black
+    set -l bgcol    red
+    set -l arrowcol red
+    set_color $textcol -b $bgcol
+    echo -n " "(basename $PWD)" "
+    set_color $arrowcol -b normal
+    echo -n "▶"
+end
+set fish_greeting

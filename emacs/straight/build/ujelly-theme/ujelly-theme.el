@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/color-theme-ujelly/ujelly-theme.el

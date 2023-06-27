@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/nerd-icons-ivy-rich/nerd-icons-ivy-rich.el

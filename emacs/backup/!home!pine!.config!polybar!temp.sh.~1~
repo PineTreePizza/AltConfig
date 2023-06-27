@@ -1,0 +1,5 @@
+#!/bin/bash
+
+temp=$(sensors | grep "Tdie" | awk '{print $2}')
+
+yad --title="CPU Temperature" --text="$temp" --width=200 --height=100 --no-buttons --on-top

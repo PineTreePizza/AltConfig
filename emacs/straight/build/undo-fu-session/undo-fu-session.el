@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-undo-fu-session/undo-fu-session.el

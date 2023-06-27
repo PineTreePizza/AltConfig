@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/railscasts-theme/railscasts-theme.el

@@ -400,7 +400,7 @@ label = "%date% %time% %{F#EC7875}-"
 
 ;; _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-[module/filesystem]
+[module/filesystem]
 type = internal/fs
 
 ; Mountpoints to display
@@ -985,30 +985,34 @@ format-prefix-foreground = ${color.blue-gray}
 ; Default: %layout%
 label-layout = " %layout%"
 
+current-layout = %layout%
+
 ; Available tokens:
 ;   %name%
 ; Default: %name%
-label-indicator-on = "%name%"
+label-indicator-on = "UPP"
+label-indicator-off = "low"
 label-indicator-on-foreground = ${color.cyan}
+label-indicator-off-foreground = ${color.gray}
 
 ;; _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
-[module/title]
+[module/xwindow]
 type = internal/xwindow
 
 ; Available tags:
 ;   <label> (default)
 format = <label>
-format-prefix = ">>"
+format-prefix = ">"
 format-foreground = ${color.foreground}
 
 ; Available tokens:
 ;   %title%
 ; Default: %title%
-label = " %title%"
+label = " %title:0:1:...%"
 
 ; Used instead of label when there is no window title
-label-empty = " EMPTY"
+label-empty = ""
 
 ;; _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
@@ -1056,14 +1060,14 @@ format = <label-state>
 ; Available tokens:
 ;   %name%
 ; Default: %name%
-label-monitor = %icon%
+label-monitor = %name%
 
 ; Available tokens:
 ;   %name%
 ;   %icon%
 ;   %index%
 ; Default: %icon%  %name%
-label-active = %icon%
+label-active = %index%
 label-active-foreground = ${color.purple}
 
 ; Available tokens:
@@ -1071,7 +1075,7 @@ label-active-foreground = ${color.purple}
 ;   %icon%
 ;   %index%
 ; Default: %icon%  %name%
-label-occupied = %icon%
+label-occupied = %index%
 label-occupied-foreground = ${color.blue-gray}
 
 ; Available tokens:
@@ -1079,7 +1083,7 @@ label-occupied-foreground = ${color.blue-gray}
 ;   %icon%
 ;   %index%
 ; Default: %icon%  %name%
-label-urgent = %icon%
+label-urgent = %index%
 label-urgent-foreground = ${color.blue-gray}
 
 ; Available tokens:
@@ -1087,7 +1091,7 @@ label-urgent-foreground = ${color.blue-gray}
 ;   %icon%
 ;   %index%
 ; Default: %icon%  %name%
-label-empty = %icon%
+label-empty = 
 label-empty-foreground = ${color.blue-gray}
 
 label-active-padding = 1

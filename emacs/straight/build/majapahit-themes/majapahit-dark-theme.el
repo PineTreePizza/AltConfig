@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/majapahit-themes/majapahit-dark-theme.el

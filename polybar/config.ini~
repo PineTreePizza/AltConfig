@@ -68,7 +68,7 @@ height = 30
 ; 50%:-10, this will result in an offset in the x or y direction 
 ; of 50% minus 10 pixels
 offset-x = 0%
-offset-y = 0%
+offset-y = 0.5%
 
 ; Background ARGB color (e.g. #f00, #ff992a, #ddff1023)
 background = ${color.background}
@@ -78,15 +78,17 @@ foreground = ${color.foreground}
 
 ; Background gradient (vertical steps)
 ;   background-[0-9]+ = #aarrggbb
-;;background-0 = 
+;;background-0 =
 
+border-left-size = 0%
+border-right-size = 0%
 ; Value used for drawing rounded corners
 ; Note: This shouldn't be used together with border-size because the border 
 ; doesn't get rounded
 ; Individual top/bottom values can be defined using:
 ;   radius-{top,bottom}
-radius-top = 20.0
-radius-bottom = 0.0
+radius-top = 10.0
+radius-bottom = 10.0
 
 ; Under-/overline pixel size and argb color
 ; Individual values can be defined using:
@@ -138,9 +140,9 @@ font-1 = Terminus:size=14;3
 ;   modules-center = xwindow xbacklight
 ;   modules-right = ipc clock
 
-modules-left = xworkspaces xwindow;cpu sep memory sep filesystem
-modules-center = mpd sep date
-modules-right = keyboard sep network sep volume sep brightness sep battery
+;modules-left = xworkspaces xwindow cpu sep memory sep filesystem
+;modules-center = date
+;modules-right = keyboard sep network sep volume sep brightness sep battery
 
 ;; _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
@@ -176,13 +178,13 @@ tray-position = none
 tray-detached = false
 
 ; Tray icon max size
-tray-maxsize = 16
+tray-maxsize = 0
 
 ; Background color for the tray container 
 ; ARGB color (e.g. #f00, #ff992a, #ddff1023)
 ; By default the tray container will use the bar
 ; background color.
-tray-background = ${color.background}
+tray-background = #00000000
 
 ; Tray offset defined as pixel value (e.g. 35) or percentage (e.g. 50%)
 tray-offset-x = 0
@@ -209,6 +211,8 @@ tray-scale = 1.0
 ; This only affects scalable fonts
 ; dpi = 
 
+wm_restack = bspwm
+
 ; Enable support for inter-process messaging
 ; See the Messaging wiki page for more details.
 enable-ipc = true
@@ -229,8 +233,6 @@ double-click-right =
 ; - default   : The default pointer as before, can also be an empty string (default)
 ; - pointer   : Typically in the form of a hand
 ; - ns-resize : Up and down arrows, can be used to indicate scrolling
-cursor-click = 
-cursor-scroll = 
 
 ;; WM Workspace Specific
 
@@ -264,7 +266,7 @@ cursor-scroll =
 ;throttle-input-for = 30
 
 ; Reload upon receiving XCB_RANDR_SCREEN_CHANGE_NOTIFY events
-pseudo-transparency = true
+pseudo-transparency = false
 
 ; Compositing operators
 ; @see: https://www.cairographics.org/manual/cairo-cairo-t.html#cairo-operator-t
@@ -287,3 +289,30 @@ compositing-border = over
 ; Enables pseudo-transparency for the bar
 ; If set to true the bar can be transparent without a compositor.
 ;; _-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+[bar/left]
+inherit = bar/main
+width = 40%
+offset-x = 1%
+bottom = false
+modules-left = xworkspaces xwindow cpu sep memory sep filesystem sep
+modules-center =
+modules-right =
+
+[bar/center]
+inherit = bar/main
+width = 20%
+offset-x = 42%
+bottom = false
+modules-left =
+modules-center = sep date sep
+modules-right =
+
+[bar/right]
+inherit = bar/main
+width = 35%
+offset-x = 63%
+bottom = false
+modules-left = 
+modules-center =
+modules-right = keyboard sep network sep volume sep brightness sep battery sep

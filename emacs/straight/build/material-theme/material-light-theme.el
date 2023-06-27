@@ -1,0 +1,1 @@
+/home/pine/.config/emacs/straight/repos/emacs-material-theme/material-light-theme.el
